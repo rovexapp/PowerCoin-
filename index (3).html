@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="styles.css"
+
+</head>
+    <body>
+
+    <div class="user-info">
+        <img src="" alt="Profile Picture" id="profile-pic">
+        <div>
+            <div class="user-name" id="user-name">User Name</div>
+            <div class="user-id" id="user-id">@username</div>
+        </div>
+    </div>
+
+    <div class="level-bar">
+        <div class="level-bar-fill" id="level-bar-fill"></div>
+        <div class="level-bar-text" id="level-bar-text">Level 1: 0/1000</div>
+    </div>
+
+    <div class="points" id="points">Points: 0</div>
+
+    <div class="circle" id="circle">
+        <div class="circle-content">$</div>
+    </div>
+
+    <div class="progress-bar">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
+        <div class="progress-bar-text" id="progress-bar-text">1000</div>
+    </div>
+
+    <div class="nav-buttons">
+        <button onclick="location.href='index.html'">Main</button>
+        <button onclick="location.href='invite.html'">Invite Friends</button>
+    </div>
+    <script src="app.js"></script>
+</body>
