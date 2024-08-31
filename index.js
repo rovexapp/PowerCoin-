@@ -2,10 +2,9 @@ const express = require('express');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
-const port = process.env.PORT || 3000;
 
 // إعداد قاعدة البيانات
-const db = new sqlite3.Database(path.resolve(__dirname, 'users.db'), (err) => {
+const db = new sqlite3.Database('users.db', (err) => {
     if (err) {
         console.error('Could not open database:', err.message);
     } else {
@@ -26,7 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 
 // مسار لاسترجاع بيانات المستخدم
-app.post('/getUserData', (req, res) => {
+app.post('/api/getUserData', (req, res) => {
     const { telegram_id, first_name, username } = req.body;
 
     db.get('SELECT * FROM users WHERE telegram_id = ?', [telegram_id], (err, row) => {
@@ -70,7 +69,7 @@ app.post('/getUserData', (req, res) => {
 });
 
 // مسار لتحديث بيانات المستخدم
-app.post('/updateUserData', (req, res) => {
+app.post('/api/updateUserData', (req, res) => {
     const { telegram_id, points, progress } = req.body;
 
     db.run('UPDATE users SET points = ?, progress = ? WHERE telegram_id = ?', 
@@ -84,9 +83,8 @@ app.post('/updateUserData', (req, res) => {
 });
 
 // تشغيل السيرفر
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+app.listen(3000, () => {
+    console.log(`Server is running on port 3000`);
 });
 
-// إضافة export للنشر على Vercel
 module.exports = app;
