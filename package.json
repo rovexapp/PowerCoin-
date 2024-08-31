@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "node index.js" // أضف هذا إذا كنت بحاجة إلى تشغيل تطبيقك في وضع التطوير
+   "dev": "node index.j" // أضف هذا إذا كنت بحاجة إلى تشغيل تطبيقك في وضع التطوير
   },
   "keywords": [],
   "author": "",
