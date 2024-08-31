@@ -4,8 +4,12 @@
   "description": "PowerCoin Telegram Bot Application",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "node index.js" // أضف هذا إذا كنت بحاجة إلى تشغيل تطبيقك في وضع التطوير
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
     "sqlite3": "^5.1.7"
