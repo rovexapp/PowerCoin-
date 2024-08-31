@@ -4,12 +4,8 @@
   "description": "PowerCoin Telegram Bot Application",
   "main": "index.js",
   "scripts": {
-    "build": "vercel build",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node index.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "express": "^4.19.2",
     "sqlite3": "^5.1.7"
