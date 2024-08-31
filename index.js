@@ -1,89 +1,78 @@
 const express = require('express');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
+const admin = require('firebase-admin');
+const serviceAccount = require('./path/to/your-service-account-file.json');
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: "https://powercoin-ee849-default-rtdb.firebaseio.com"
+});
+
+const db = admin.firestore();
 const app = express();
 const port = process.env.PORT || 3000;
 
-// إعداد قاعدة البيانات
-const db = new sqlite3.Database('./data/users.db', (err) => {
-    if (err) {
-        console.error('Could not open database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            telegram_id TEXT PRIMARY KEY,
-            first_name TEXT,
-            username TEXT,
-            points INTEGER,
-            progress INTEGER,
-            last_run_time TEXT
-        )`);
-    }
-});
-
-// إعدادات Express
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 app.use(express.json());
 
-// مسار لاسترجاع بيانات المستخدم
-app.post('/getUserData', (req, res) => {
-    const { telegram_id, first_name, username } = req.body;
+app.post('/getUserData', async (req, res) => {
+  const { telegram_id, first_name, username } = req.body;
 
-    db.get('SELECT * FROM users WHERE telegram_id = ?', [telegram_id], (err, row) => {
-        if (err) {
-            return console.error(err.message);
-        }
+  try {
+    const userRef = db.collection('users').doc(telegram_id);
+    const doc = await userRef.get();
 
-        const currentTime = new Date();
-        let lastRunTime = currentTime;
+    const currentTime = new Date();
+    let lastRunTime = currentTime;
 
-        if (row) {
-            if (row.last_run_time) {
-                lastRunTime = new Date(row.last_run_time);
-            }
+    if (doc.exists) {
+      const data = doc.data();
+      if (data.last_run_time) {
+        lastRunTime = new Date(data.last_run_time);
+      }
 
-            const elapsedTime = Math.floor((currentTime - lastRunTime) / 1000);
-            let newProgress = Math.min(row.progress + elapsedTime, 1000);
+      const elapsedTime = Math.floor((currentTime - lastRunTime) / 1000);
+      let newProgress = Math.min(data.progress + elapsedTime, 1000);
 
-            // تحديث وقت آخر تشغيل
-            db.run('UPDATE users SET last_run_time = ?, progress = ? WHERE telegram_id = ?', [currentTime.toISOString(), newProgress, telegram_id], (err) => {
-                if (err) {
-                    console.error('Error updating last run time and progress:', err.message);
-                }
-            });
+      await userRef.update({
+        last_run_time: currentTime.toISOString(),
+        progress: newProgress
+      });
 
-            res.json({ ...row, progress: newProgress });
-        } else {
-            const defaultProgress = 1000;
-            const points = 0;
+      res.json({ ...data, progress: newProgress });
+    } else {
+      const defaultProgress = 1000;
+      const points = 0;
 
-            db.run('INSERT INTO users (telegram_id, first_name, username, points, progress, last_run_time) VALUES (?, ?, ?, ?, ?, ?)', 
-                [telegram_id, first_name, username, points, defaultProgress, currentTime.toISOString()], 
-                (err) => {
-                if (err) {
-                    return console.error(err.message);
-                }
-                res.json({ telegram_id, first_name, username, points, progress: defaultProgress });
-            });
-        }
-    });
+      await userRef.set({
+        telegram_id,
+        first_name,
+        username: username || null,
+        points,
+        progress: defaultProgress,
+        last_run_time: currentTime.toISOString()
+      });
+
+      res.json({ telegram_id, first_name, username, points, progress: defaultProgress });
+    }
+  } catch (error) {
+    console.error('Error retrieving or saving user data:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-// مسار لتحديث بيانات المستخدم
-app.post('/updateUserData', (req, res) => {
-    const { telegram_id, points, progress } = req.body;
+app.post('/updateUserData', async (req, res) => {
+  const { telegram_id, points, progress } = req.body;
 
-    db.run('UPDATE users SET points = ?, progress = ? WHERE telegram_id = ?', 
-        [points, progress, telegram_id], 
-        (err) => {
-        if (err) {
-            return console.error(err.message);
-        }
-        res.status(200).send('User data updated');
-    });
+  try {
+    const userRef = db.collection('users').doc(telegram_id);
+    await userRef.update({ points, progress });
+    res.status(200).send('User data updated');
+  } catch (error) {
+    console.error('Error updating user data:', error);
+    res.status(500).send('Internal Server Error');
+  }
 });
 
-// تشغيل السيرفر
 app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Server is running on http://localhost:${port}`);
 });
