@@ -2,9 +2,10 @@ const express = require('express');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const app = express();
+const port = process.env.PORT || 3000;
 
 // إعداد قاعدة البيانات
-const db = new sqlite3.Database('users.db', (err) => {
+const db = new sqlite3.Database('./users.db', (err) => {
     if (err) {
         console.error('Could not open database:', err.message);
     } else {
@@ -22,15 +23,15 @@ const db = new sqlite3.Database('users.db', (err) => {
 
 // إعدادات Express
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json());
+app.use(express.json()); // لتفسير بيانات JSON في الطلبات
 
-// مسار لاسترجاع بيانات المستخدم
+// مسار POST لاسترجاع بيانات المستخدم
 app.post('/api/getUserData', (req, res) => {
     const { telegram_id, first_name, username } = req.body;
 
     db.get('SELECT * FROM users WHERE telegram_id = ?', [telegram_id], (err, row) => {
         if (err) {
-            return console.error(err.message);
+            return res.status(500).json({ error: err.message });
         }
 
         const currentTime = new Date();
@@ -60,7 +61,7 @@ app.post('/api/getUserData', (req, res) => {
                 [telegram_id, first_name, username, points, defaultProgress, currentTime.toISOString()], 
                 (err) => {
                 if (err) {
-                    return console.error(err.message);
+                    return res.status(500).json({ error: err.message });
                 }
                 res.json({ telegram_id, first_name, username, points, progress: defaultProgress });
             });
@@ -68,7 +69,7 @@ app.post('/api/getUserData', (req, res) => {
     });
 });
 
-// مسار لتحديث بيانات المستخدم
+// مسار POST لتحديث بيانات المستخدم
 app.post('/api/updateUserData', (req, res) => {
     const { telegram_id, points, progress } = req.body;
 
@@ -76,15 +77,13 @@ app.post('/api/updateUserData', (req, res) => {
         [points, progress, telegram_id], 
         (err) => {
         if (err) {
-            return console.error(err.message);
+            return res.status(500).json({ error: err.message });
         }
         res.status(200).send('User data updated');
     });
 });
 
 // تشغيل السيرفر
-app.listen(3000, () => {
-    console.log(`Server is running on port 3000`);
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
 });
-
-module.exports = app;
