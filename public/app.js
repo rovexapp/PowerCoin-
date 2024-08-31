@@ -1,16 +1,21 @@
-const pointsDisplay = document.getElementById('points');
-const circle = document.getElementById('circle');
-const progressBarFill = document.getElementById('progress-bar-fill');
-const progressBarText = document.getElementById('progress-bar-text');
-const levelBarFill = document.getElementById('level-bar-fill');
-const levelBarText = document.getElementById('level-bar-text');
+document.addEventListener('DOMContentLoaded', function() {
+    const pointsDisplay = document.getElementById('points');
+    const circle = document.getElementById('circle');
+    const progressBarFill = document.getElementById('progress-bar-fill');
+    const progressBarText = document.getElementById('progress-bar-text');
+    const levelBarFill = document.getElementById('level-bar-fill');
+    const levelBarText = document.getElementById('level-bar-text');
 
-const telegram = window.Telegram.WebApp;
-telegram.ready();
+    const telegram = window.Telegram.WebApp;
+    telegram.ready();
 
-const user = telegram.initDataUnsafe.user;
+    const user = telegram.initDataUnsafe.user;
 
-if (user) {
+    if (!user) {
+        console.error('Unable to fetch user data from Telegram.');
+        return;
+    }
+
     fetch('/api/getUserData', {
         method: 'POST',
         headers: {
@@ -61,6 +66,15 @@ if (user) {
             circle.style.cursor = progress > 0 ? 'pointer' : 'not-allowed';
         }
 
+        circle.addEventListener('click', () => {
+            if (progress >= 1) {
+                points += 1;
+                progress -= 1;
+                updateUI();
+                saveData(points, progress);
+            }
+        });
+
         circle.addEventListener('touchstart', (event) => {
             const clickCount = event.touches.length;
 
@@ -72,14 +86,15 @@ if (user) {
             }
         });
 
-        circle.addEventListener('click', () => {
-            if (progress >= 1) {
-                points += 1;
-                progress -= 1;
-                updateUI();
-                saveData(points, progress);
-            }
-        });
+        function saveData(points, progress) {
+            fetch('/api/updateUserData', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ telegram_id: user.id, points, progress })
+            });
+        }
 
         setInterval(() => {
             if (progress < 1000) {
@@ -90,15 +105,8 @@ if (user) {
         }, 1000);
 
         updateUI();
+    })
+    .catch(error => {
+        console.error('Error fetching user data:', error);
     });
-}
-
-function saveData(points, progress) {
-    fetch('/api/updateUserData', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ telegram_id: user.id, points, progress })
-    });
-}
+});
