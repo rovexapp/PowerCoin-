@@ -1,22 +1,17 @@
-document.addEventListener('DOMContentLoaded', function() {
-    const pointsDisplay = document.getElementById('points');
-    const circle = document.getElementById('circle');
-    const progressBarFill = document.getElementById('progress-bar-fill');
-    const progressBarText = document.getElementById('progress-bar-text');
-    const levelBarFill = document.getElementById('level-bar-fill');
-    const levelBarText = document.getElementById('level-bar-text');
+const pointsDisplay = document.getElementById('points');
+const circle = document.getElementById('circle');
+const progressBarFill = document.getElementById('progress-bar-fill');
+const progressBarText = document.getElementById('progress-bar-text');
+const levelBarFill = document.getElementById('level-bar-fill');
+const levelBarText = document.getElementById('level-bar-text');
 
-    const telegram = window.Telegram.WebApp;
-    telegram.ready();
+const telegram = window.Telegram.WebApp;
+telegram.ready();
 
-    const user = telegram.initDataUnsafe.user;
+const user = telegram.initDataUnsafe.user;
 
-    if (!user) {
-        console.error('Unable to fetch user data from Telegram.');
-        return;
-    }
-
-    fetch('/api/getUserData', {
+if (user) {
+    fetch('/getUserData', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -29,33 +24,28 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(response => response.json())
     .then(data => {
-        if (!data) {
-            console.error('No data received from the server.');
-            return;
-        }
-
         document.getElementById('user-name').textContent = data.first_name;
         document.getElementById('user-id').textContent = data.username ? `@${data.username}` : data.telegram_id;
 
         let points = data.points || 0;
         let progress = data.progress || 1000;
 
+        const levelRanges = [
+            { level: 1, min: 0, max: 1000 },
+            { level: 2, min: 1001, max: 5000 },
+            { level: 3, min: 5001, max: 10000 },
+            { level: 4, min: 10001, max: 20000 },
+            { level: 5, min: 20001, max: Infinity },
+        ];
+
+        function getCurrentLevel(points) {
+            return levelRanges.find(range => points >= range.min && points <= range.max);
+        }
+
         function updateUI() {
             pointsDisplay.textContent = `Points: ${points}`;
             progressBarFill.style.width = `${progress / 10}%`;
             progressBarText.textContent = `${progress}`;
-
-            const levelRanges = [
-                { level: 1, min: 0, max: 1000 },
-                { level: 2, min: 1001, max: 5000 },
-                { level: 3, min: 5001, max: 10000 },
-                { level: 4, min: 10001, max: 20000 },
-                { level: 5, min: 20001, max: Infinity },
-            ];
-
-            function getCurrentLevel(points) {
-                return levelRanges.find(range => points >= range.min && points <= range.max);
-            }
 
             const currentLevel = getCurrentLevel(points);
             if (currentLevel.level < 5) {
@@ -71,15 +61,6 @@ document.addEventListener('DOMContentLoaded', function() {
             circle.style.cursor = progress > 0 ? 'pointer' : 'not-allowed';
         }
 
-        circle.addEventListener('click', () => {
-            if (progress > 0) {
-                points += 1;
-                progress -= 1;
-                updateUI();
-                saveData(points, progress);
-            }
-        });
-
         circle.addEventListener('touchstart', (event) => {
             const clickCount = event.touches.length;
 
@@ -91,15 +72,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        function saveData(points, progress) {
-            fetch('/api/updateUserData', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ telegram_id: user.id, points, progress })
-            });
-        }
+        circle.addEventListener('click', () => {
+            if (progress >= 1) {
+                points += 1;
+                progress -= 1;
+                updateUI();
+                saveData(points, progress);
+            }
+        });
 
         setInterval(() => {
             if (progress < 1000) {
@@ -110,8 +90,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 1000);
 
         updateUI();
-    })
-    .catch(error => {
-        console.error('Error fetching user data:', error);
     });
-});
+}
+
+function saveData(points, progress) {
+    fetch('/updateUserData', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ telegram_id: user.id, points, progress })
+    });
+}
