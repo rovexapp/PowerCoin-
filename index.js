@@ -1,30 +1,3 @@
-const express = require('express');
-const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
-const app = express();
-const port = process.env.PORT || 3000;
-
-// إعداد قاعدة البيانات
-const db = new sqlite3.Database('./users.db', (err) => {
-    if (err) {
-        console.error('Could not open database:', err.message);
-    } else {
-        console.log('Connected to the SQLite database.');
-        db.run(`CREATE TABLE IF NOT EXISTS users (
-            telegram_id TEXT PRIMARY KEY,
-            first_name TEXT,
-            username TEXT,
-            points INTEGER,
-            progress INTEGER,
-            last_run_time TEXT
-        )`);
-    }
-});
-
-// إعدادات Express
-app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.json()); // لتفسير بيانات JSON في الطلبات
-
 // مسار POST لاسترجاع بيانات المستخدم
 app.post('/api/getUserData', (req, res) => {
     const { telegram_id, first_name, username } = req.body;
@@ -81,9 +54,4 @@ app.post('/api/updateUserData', (req, res) => {
         }
         res.status(200).send('User data updated');
     });
-});
-
-// تشغيل السيرفر
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
 });
