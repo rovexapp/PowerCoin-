@@ -11,7 +11,7 @@ telegram.ready();
 const user = telegram.initDataUnsafe.user;
 
 if (user) {
-    fetch('/getUserData', {
+    fetch('/api/getUserData', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -94,7 +94,7 @@ if (user) {
 }
 
 function saveData(points, progress) {
-    fetch('/updateUserData', {
+    fetch('/api/updateUserData', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
