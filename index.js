@@ -5,7 +5,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // إعداد قاعدة البيانات
-const db = new sqlite3.Database('users.db', (err) => {
+const db = new sqlite3.Database(path.resolve(__dirname, 'users.db'), (err) => {
     if (err) {
         console.error('Could not open database:', err.message);
     } else {
@@ -87,3 +87,6 @@ app.post('/updateUserData', (req, res) => {
 app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
 });
+
+// إضافة export للنشر على Vercel
+module.exports = app;
