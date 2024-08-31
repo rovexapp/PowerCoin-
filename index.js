@@ -1,10 +1,37 @@
-// مسار POST لاسترجاع بيانات المستخدم
-app.post('/api/getUserData', (req, res) => {
+const express = require('express');
+const path = require('path');
+const sqlite3 = require('sqlite3').verbose();
+const app = express();
+const port = process.env.PORT || 3000;
+
+// إعداد قاعدة البيانات
+const db = new sqlite3.Database('./data/users.db', (err) => {
+    if (err) {
+        console.error('Could not open database:', err.message);
+    } else {
+        console.log('Connected to the SQLite database.');
+        db.run(`CREATE TABLE IF NOT EXISTS users (
+            telegram_id TEXT PRIMARY KEY,
+            first_name TEXT,
+            username TEXT,
+            points INTEGER,
+            progress INTEGER,
+            last_run_time TEXT
+        )`);
+    }
+});
+
+// إعدادات Express
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
+
+// مسار لاسترجاع بيانات المستخدم
+app.post('/getUserData', (req, res) => {
     const { telegram_id, first_name, username } = req.body;
 
     db.get('SELECT * FROM users WHERE telegram_id = ?', [telegram_id], (err, row) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return console.error(err.message);
         }
 
         const currentTime = new Date();
@@ -34,7 +61,7 @@ app.post('/api/getUserData', (req, res) => {
                 [telegram_id, first_name, username, points, defaultProgress, currentTime.toISOString()], 
                 (err) => {
                 if (err) {
-                    return res.status(500).json({ error: err.message });
+                    return console.error(err.message);
                 }
                 res.json({ telegram_id, first_name, username, points, progress: defaultProgress });
             });
@@ -42,16 +69,21 @@ app.post('/api/getUserData', (req, res) => {
     });
 });
 
-// مسار POST لتحديث بيانات المستخدم
-app.post('/api/updateUserData', (req, res) => {
+// مسار لتحديث بيانات المستخدم
+app.post('/updateUserData', (req, res) => {
     const { telegram_id, points, progress } = req.body;
 
     db.run('UPDATE users SET points = ?, progress = ? WHERE telegram_id = ?', 
         [points, progress, telegram_id], 
         (err) => {
         if (err) {
-            return res.status(500).json({ error: err.message });
+            return console.error(err.message);
         }
         res.status(200).send('User data updated');
     });
+});
+
+// تشغيل السيرفر
+app.listen(port, () => {
+    console.log(`Server is running on http://localhost:${port}`);
 });
